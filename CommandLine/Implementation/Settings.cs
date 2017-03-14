@@ -29,7 +29,7 @@ namespace CommandLine.Implementation
         public string[] SwitchSeparators { get; set; } = { ":", "=" };
 
         /// <summary>
-        /// boolean switches can be prefixed with 'no-' to set them to false
+        /// Gets or sets a value indicating whether the argument start with 'no-'
         /// </summary>
         public string NoPrefix { get; set; } = "no-";
 

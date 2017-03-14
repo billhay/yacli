@@ -81,7 +81,6 @@ namespace CommandLineParser.Tests
 
         public bool B4 { get; set; } = true;
 
-
         [Argument("dummy", ShortName = "d")]
         public string Dummy { get; set; }
     }
@@ -122,6 +121,14 @@ namespace CommandLineParser.Tests
         internal Colors Color { get; private set; }
 
         internal bool Verbose { get; private set; }
+    }
+
+    internal class Secret
+    {
+        public string Name { get; set; }
+
+        [Argument("")]
+        public string Shhh { get; set; } = "My precious stuff";
     }
 
 
@@ -208,7 +215,7 @@ namespace CommandLineParser.Tests
                 Assert.AreEqual("aa", ex.ParameterName);
                 Assert.AreEqual("102", ex.ParameterValue);
                 Assert.IsNull(ex.ParameterType);
-                Assert.AreEqual("Exception parsing comand line parameter: name = aa, value = 102, reason = Unknow command line switch: aa", ex.Message);
+                Assert.AreEqual("Exception parsing comand line parameter: name = aa, value = 102, reason = Unknown command line switch: aa", ex.Message);
                 return;
             }
 
@@ -337,6 +344,14 @@ namespace CommandLineParser.Tests
                     Console.WriteLine(ex.Message);
                 }
             }
+        }
+
+        [TestMethod()]
+        [ExpectedException(typeof(AggregateException))]
+        public void InvisiblePropertyTest()
+        {
+            string[] args = { "-name:alphonse", "-Shhh:no you don't" };
+            (Secret secret, List<string> files) = CommandLineParser<Secret>.Parse(args);
         }
     }
 }

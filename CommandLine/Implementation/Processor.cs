@@ -23,7 +23,7 @@ namespace CommandLine.Implementation
         /// The list of descriptors for the application setting class. For each field in the class there is a name, an optional short name, and a setter
         /// to set a value into the field
         /// </summary>
-        private readonly List<ArgumentDescriptor> descriptors;
+        private readonly List<ArgumentDescriptor> descriptors = new List<ArgumentDescriptor>();
 
         /// <summary>
         /// the context
@@ -43,7 +43,6 @@ namespace CommandLine.Implementation
         {
             this.context = context;
             this.applicationArgumentClass = context.CommandLineSwitches;
-            this.descriptors = this.BuildDescriptors();
             this.context.ArgumentDescriptors = this.descriptors;
         }
 
@@ -82,7 +81,9 @@ namespace CommandLine.Implementation
 
             Context<T> context = new Context<T> { Settings = settings };
             Processor<T> processor = new Processor<T>(context);
-            List<ArgumentDescriptor> descriptors = processor.BuildDescriptors();
+            processor.BuildDescriptors();
+            var descriptors = processor.descriptors;
+
             descriptors.Sort((x, y) => string.Compare(Processor<T>.SortName(x), Processor<T>.SortName(y), StringComparison.CurrentCulture));
             return descriptors;
         }
@@ -113,8 +114,9 @@ namespace CommandLine.Implementation
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "In this case we are going to rethrow the exception as an aggregate exception")]
         private void Parse(string[] args, int start)
         {
+            this.BuildDescriptors();
             Parser<T> parser = new Parser<T>(args, start, this.context);
-            IReadOnlyDictionary<string, List<string>> dict  = parser.Parse();
+            IReadOnlyDictionary<string, List<string>> dict = parser.Parse();
             var exceptions = this.context.Exceptions;
 
             foreach (KeyValuePair<string, List<string>> param in dict)
@@ -197,10 +199,8 @@ namespace CommandLine.Implementation
         /// <summary>
         /// Initializes the descriptors by scanning the application settings class
         /// </summary>
-        /// <returns>The list of argument descriptors from the application settings class</returns>
-        private List<ArgumentDescriptor> BuildDescriptors()
+        private void BuildDescriptors()
         {
-            List<ArgumentDescriptor> localDescriptors = new List<ArgumentDescriptor>();
             TypeInfo ti = this.applicationArgumentClass.GetType().GetTypeInfo();
 
             foreach (PropertyInfo property in ti.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance))
@@ -212,13 +212,13 @@ namespace CommandLine.Implementation
                     foreach (CustomAttributeData attributeData in property.CustomAttributes.Where(
                             x => x.AttributeType.FullName == typeof(ArgumentAttribute).FullName))
                     {
-                        localDescriptors.Add(this.AddDescriptor(attributeData, action, property.Name, property.PropertyType));
+                        this.AddDescriptor(attributeData, action, property.Name, property.PropertyType);
                         found = true;
                     }
 
                     if (!found)
                     {
-                        localDescriptors.Add(this.AddDescriptor(null, action, property.Name, property.PropertyType));
+                        this.AddDescriptor(null, action, property.Name, property.PropertyType);
                     }
                 }
                 catch (Exception ex)
@@ -243,13 +243,13 @@ namespace CommandLine.Implementation
                         field.CustomAttributes.Where(
                             x => x.AttributeType.FullName == typeof(ArgumentAttribute).FullName))
                     {
-                        localDescriptors.Add(this.AddDescriptor(attributeData, action, field.Name, field.FieldType));
+                        this.AddDescriptor(attributeData, action, field.Name, field.FieldType);
                         found = true;
                     }
 
                     if (!found)
                     {
-                        localDescriptors.Add(this.AddDescriptor(null, action, field.Name, field.FieldType));
+                        this.AddDescriptor(null, action, field.Name, field.FieldType);
                     }
                 }
                 catch (Exception ex)
@@ -257,8 +257,6 @@ namespace CommandLine.Implementation
                     this.context.Exceptions.Add(ex);
                 }
             }
-
-            return localDescriptors;
         }
 
         /// <summary>
@@ -268,8 +266,7 @@ namespace CommandLine.Implementation
         /// <param name="action">The action which sets the value</param>
         /// <param name="fieldName">The name of the field or property</param>
         /// <param name="targetType">The type of the field or property</param>
-        /// <returns>The descriptor for the field/property</returns>
-        private ArgumentDescriptor AddDescriptor(CustomAttributeData attributeData, Action<object> action, string fieldName, Type targetType)
+        private void AddDescriptor(CustomAttributeData attributeData, Action<object> action, string fieldName, Type targetType)
         {
             ArgumentDescriptor ar = new ArgumentDescriptor
             {
@@ -290,6 +287,11 @@ namespace CommandLine.Implementation
                 {
                     Debug.Assert(constructorParameterName.ArgumentType == typeof(string), "Attribute constructor parameter must be a string");
                     ar.Name = (string)constructorParameterName.Value;
+                    if (string.IsNullOrWhiteSpace(ar.Name))
+                    {
+                        ar.IsHidden = true;
+                    }
+
                     ar.MemberType = targetType;
                 }
 
@@ -339,7 +341,7 @@ namespace CommandLine.Implementation
                 targetType.GetInterfaces()
                     .FirstOrDefault(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IList<>)) != null;
 
-            return ar;
+            this.descriptors.Add(ar);
         }
     }
 }

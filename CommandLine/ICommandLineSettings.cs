@@ -31,9 +31,9 @@ namespace CommandLine
         string[] SwitchSeparators { get; set; }
 
         /// <summary>
-        /// boolean switches can be prefixed with 'no-' to set them to false
+        /// Gets or sets a value indicating whether the argument start with 'no-'
         /// </summary>
-        string NoPrefix { get; set; } 
+        string NoPrefix { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether fields and properties must be attributed

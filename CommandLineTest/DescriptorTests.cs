@@ -12,7 +12,7 @@ namespace CommandLineTest
         Red,
         White,
         Blue
-    };
+    }
 
     [TestClass]
     public class DescriptorTests

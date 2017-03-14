@@ -53,6 +53,11 @@ namespace CommandLine.Implementation
         internal bool IsList { get; set; } = false;
 
         /// <summary>
+        /// Gets or sets a value indicating whether the property is hidden.
+        /// </summary>
+        internal bool IsHidden { get; set; } = false;
+
+        /// <summary>
         /// Determines if a the name matches this descriptor
         /// </summary>
         /// <param name="name">The requested name</param>

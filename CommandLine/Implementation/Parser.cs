@@ -9,14 +9,27 @@ namespace CommandLine.Implementation
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
-    using System.Runtime.CompilerServices;
 
+    /// <summary>
+    /// The command line argument type.
+    /// </summary>
     internal enum CommandLineArgumentType
     {
+        /// <summary>
+        /// It is a switch
+        /// </summary>
         Switch,
+
+        /// <summary>
+        /// It is a value.
+        /// </summary>
         Value,
+
+        /// <summary>
+        /// It is the end switch marker.
+        /// </summary>
         EndSwitchMarker
-    };
+    }
 
     /// <summary>
     /// Converts the command line into a Dictionary
@@ -106,10 +119,10 @@ namespace CommandLine.Implementation
                         }
 
                         ArgumentDescriptor ar = this.context.GetDescriptor(key);
-                        if (ar == null)
+                        if (ar == null || ar.IsHidden)
                         {
                             ++this.currentIndex;
-                            throw new CommandLineException(key, keyValue[1] ?? string.Empty, "Unknow command line switch: " + key);
+                            throw new CommandLineException(key, keyValue.Length > 1 ? keyValue[1] : string.Empty, "Unknown command line switch: " + key);
                         }
 
                         // if target is a bool then:
@@ -189,7 +202,7 @@ namespace CommandLine.Implementation
         }
 
         /// <summary>
-        /// Determines the type of the arg  
+        /// Determines the type of the argument  
         /// - switch (because it has a switch prefix)
         /// - endOfSwitchMarker (switch prefix but nothing following it
         /// - token
